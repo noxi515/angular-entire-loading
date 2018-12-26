@@ -1,7 +1,11 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { Injectable } from '@angular/core';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { SpinnerLoadingIndicatorComponent } from './spinner-loading-indicator/spinner-loading-indicator.component';
+import { ComponentPortal, PortalInjector } from '@angular/cdk/portal';
+import { Injectable, Injector } from '@angular/core';
+import {
+  SPINNER_LOADING_INDICATOR_OPTIONS,
+  SpinnerLoadingIndicatorComponent,
+  SpinnerLoadingIndicatorOptions
+} from './spinner-loading-indicator/spinner-loading-indicator.component';
 
 export interface LoadingIndicatorRef {
   close(): void;
@@ -12,21 +16,29 @@ export interface LoadingIndicatorRef {
 })
 export class LoadingIndicatorService {
 
-  constructor(private readonly _overlay: Overlay) {
+  constructor(
+    private readonly _injector: Injector,
+    private readonly _overlay: Overlay
+  ) {
   }
 
-  show(): LoadingIndicatorRef {
-    const overlayRef = this._createOverlay();
-    const portal = new ComponentPortal(SpinnerLoadingIndicatorComponent,);
-    overlayRef.attach(portal);
+show(options?: SpinnerLoadingIndicatorOptions): LoadingIndicatorRef {
+  // Injectorの作成
+  const injector = new PortalInjector(this._injector, new WeakMap([
+    [SPINNER_LOADING_INDICATOR_OPTIONS, options]
+  ]));
+  const portal = new ComponentPortal(SpinnerLoadingIndicatorComponent, null, injector);
 
-    return {
-      close() {
-        overlayRef.detach();
-        overlayRef.dispose();
-      }
-    };
-  }
+  const overlayRef = this._createOverlay();
+  overlayRef.attach(portal);
+
+  return {
+    close() {
+      overlayRef.detach();
+      overlayRef.dispose();
+    }
+  };
+}
 
   private _createOverlay(): OverlayRef {
     return this._overlay.create({
